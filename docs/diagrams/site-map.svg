@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="750" viewBox="0 0 1100 750" role="img" aria-labelledby="title description">
+  <title id="title">岸谷蘭丸公式サイトの提案サイトマップ</title>
+  <desc id="description">トップにレギュラーメディアとニュースを配置し、プロフィールとSNSを同じ欄にまとめる提案です。プロフィールには本人紹介、関連事業、本人SNS4つと告知用Instagramの計5リンクを配置します。問い合わせは種類選択なしの共通フォームからHTTPSとhCaptchaでWeb3Formsへ送信します。サービス側のhCaptcha有効化は依頼者確認済みです。HTTPS実認証と受信箱着信は公開前に確認します。統合案の採否、ページ分割と公開先は未合意です。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#53646e"/>
+    </marker>
+    <style>
+      text { font-family: "Yu Gothic", Meiryo, sans-serif; fill: #172a33; }
+      .title { font-size: 28px; font-weight: 700; }
+      .node { font-size: 21px; font-weight: 700; }
+      .note { font-size: 16px; }
+      .box { fill: #edf3f5; stroke: #b4c6ce; stroke-width: 1.5; }
+      .external { fill: #e8f2ed; stroke: #a4c5b5; stroke-width: 1.5; }
+      .path { fill: none; stroke: #53646e; stroke-width: 2; marker-end: url(#arrow); }
+      .branch { fill: none; stroke: #53646e; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect width="1100" height="750" fill="#fff"/>
+  <text class="title" x="40" y="48">提案サイトマップ</text>
+  <text class="note" x="40" y="80">打ち合わせ用。ページ分割・URL・掲載内容は、本人と運営担当者の合意後に確定する。</text>
+
+  <rect class="box" x="420" y="120" width="260" height="95" rx="8"/>
+  <text class="node" x="550" y="151" text-anchor="middle">トップ</text>
+  <text class="note" x="550" y="178" text-anchor="middle">本人像／レギュラーメディア</text>
+  <text class="note" x="550" y="202" text-anchor="middle">ニュース／SNS・事業リンク</text>
+  <path class="branch" d="M550 215 V260 H150 M550 260 H940"/>
+
+  <rect class="box" x="40" y="310" width="220" height="95" rx="8"/>
+  <text class="node" x="150" y="348" text-anchor="middle">ニュース一覧</text>
+  <text class="note" x="150" y="376" text-anchor="middle">/news/</text>
+  <rect class="box" x="300" y="310" width="480" height="95" rx="8"/>
+  <text class="node" x="540" y="348" text-anchor="middle">プロフィール・SNS</text>
+  <text class="note" x="540" y="376" text-anchor="middle">トップ内：#profile ／ #links</text>
+  <rect class="box" x="820" y="310" width="240" height="95" rx="8"/>
+  <text class="node" x="940" y="348" text-anchor="middle">問い合わせフォーム</text>
+  <text class="note" x="940" y="376" text-anchor="middle">#contact</text>
+  <path class="path" d="M150 260 V300"/>
+  <path class="path" d="M540 260 V300"/>
+  <path class="path" d="M940 260 V300"/>
+
+  <rect class="box" x="40" y="480" width="220" height="95" rx="8"/>
+  <text class="node" x="150" y="518" text-anchor="middle">ニュース記事</text>
+  <text class="note" x="150" y="546" text-anchor="middle">/news/{slug}/</text>
+  <rect class="external" x="530" y="480" width="280" height="95" rx="8"/>
+  <text class="node" x="670" y="518" text-anchor="middle">承認済みの外部ページ</text>
+  <text class="note" x="670" y="546" text-anchor="middle">本人SNS／告知用Instagram</text>
+  <rect class="box" x="820" y="480" width="240" height="95" rx="8"/>
+  <text class="node" x="940" y="518" text-anchor="middle">Web3Formsで受付</text>
+  <text class="note" x="940" y="546" text-anchor="middle">非公開の受信箱へ通知</text>
+  <path class="path" d="M150 405 V470"/>
+  <path class="path" d="M540 405 V440 H670 V470"/>
+  <path class="path" d="M940 405 V470"/>
+
+  <rect class="box" x="170" y="635" width="760" height="65" rx="8"/>
+  <text class="node" x="550" y="675" text-anchor="middle">全ページ共通：仕事依頼・プライバシー・運営者情報</text>
+  <text class="note" x="40" y="731">オンラインサロン、会員登録、会員限定コンテンツ、会費決済は制作対象に含めない。</text>
+</svg>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="650" viewBox="0 0 1100 650" role="img" aria-labelledby="title description">
+  <title id="title">Googleフォームとスプレッドシートを使う公開方法の提案</title>
+  <desc id="description">編集者向けフォームから非公開シートへ下書きを登録し、担当者が承認します。認証された公開処理が状態、日時、項目を検証し、公開可能な情報だけをJSONや静的ページへ反映します。サイトのブラウザから内部シートを直接読む構成にはしません。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#53646e"/></marker>
+    <style>
+      text { font-family: "Yu Gothic", Meiryo, sans-serif; fill: #172a33; }
+      .title { font-size: 28px; font-weight: 700; }
+      .node { font-size: 20px; font-weight: 700; }
+      .note { font-size: 16px; }
+      .box { fill: #edf3f5; stroke: #b4c6ce; stroke-width: 1.5; }
+      .public { fill: #e8f2ed; stroke: #a4c5b5; stroke-width: 1.5; }
+      .path { fill: none; stroke: #53646e; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1100" height="650" fill="white"/>
+  <text class="title" x="40" y="48">更新しやすさと、公開範囲を分ける</text>
+  <text class="note" x="40" y="80">提案段階。フォーム・シート・連携処理はまだ作成・接続していない。</text>
+  <text class="node" x="40" y="140">非公開の編集・承認</text>
+  <rect class="box" x="40" y="180" width="260" height="95" rx="8"/>
+  <text class="node" x="170" y="218" text-anchor="middle">編集者向けフォーム</text>
+  <text class="note" x="170" y="247" text-anchor="middle">番組名・出演日・告知文等</text>
+  <rect class="box" x="420" y="180" width="260" height="95" rx="8"/>
+  <text class="node" x="550" y="218" text-anchor="middle">非公開の管理シート</text>
+  <text class="note" x="550" y="247" text-anchor="middle">下書き・訂正・解禁管理</text>
+  <rect class="box" x="800" y="180" width="260" height="95" rx="8"/>
+  <text class="node" x="930" y="218" text-anchor="middle">担当者が確認・承認</text>
+  <text class="note" x="930" y="247" text-anchor="middle">同じ記事IDで更新する</text>
+  <path class="path" d="M300 227 H410"/>
+  <path class="path" d="M680 227 H790"/>
+  <path class="path" d="M930 275 V320 H550 V365"/>
+  <rect class="box" x="380" y="375" width="340" height="100" rx="8"/>
+  <text class="node" x="550" y="412" text-anchor="middle">認証された公開処理</text>
+  <text class="note" x="550" y="440" text-anchor="middle">公開状態・解禁日時・値を検証</text>
+  <text class="note" x="550" y="463" text-anchor="middle">許可した行と項目だけを取り出す</text>
+  <rect class="public" x="800" y="375" width="260" height="100" rx="8"/>
+  <text class="node" x="930" y="412" text-anchor="middle">公開JSON・静的ページ</text>
+  <text class="note" x="930" y="440" text-anchor="middle">検証が成功してから反映</text>
+  <text class="note" x="930" y="463" text-anchor="middle">ブラウザは公開版だけを読む</text>
+  <path class="path" d="M720 425 H790"/>
+  <rect x="40" y="535" width="1020" height="75" rx="8" fill="#fff1e9" stroke="#d6b198" stroke-width="1.5"/>
+  <text class="node" x="550" y="567" text-anchor="middle">回答シート、連絡先、内部メモ、下書きは公開しない</text>
+  <text class="note" x="550" y="594" text-anchor="middle">サイト側で非表示にするだけでは保護にならない。ブラウザへ渡す前に除外する。</text>
+</svg>

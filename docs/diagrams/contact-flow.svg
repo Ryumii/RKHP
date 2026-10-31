@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="900" viewBox="0 0 1100 900" role="img" aria-labelledby="title description">
+  <title id="title">共通フォームの問い合わせ導線</title>
+  <desc id="description">種類選択なしの共通フォームに入力し、利用目的の確認とhCaptchaを完了してHTTPSでWeb3Formsへ送信します。共通件名で非公開の受信箱へ通知し、エラー時は入力を保持します。サービス側のhCaptcha有効化は依頼者確認済みです。ローカルからは送信せず、HTTPS実認証・着信・返信先は公開前に確認します。事業サービスの相談は関連事業の窓口へ案内します。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#53646e"/>
+    </marker>
+    <style>
+      text { font-family: "Yu Gothic", Meiryo, sans-serif; fill: #172a33; }
+      .title { font-size: 28px; font-weight: 700; }
+      .node { font-size: 20px; font-weight: 700; }
+      .note { font-size: 16px; }
+      .box { fill: #edf3f5; stroke: #b4c6ce; stroke-width: 1.5; }
+      .scope { fill: #fff1e9; stroke: #d6b198; stroke-width: 1.5; }
+      .external { fill: #e8f2ed; stroke: #a4c5b5; stroke-width: 1.5; }
+      .path { fill: none; stroke: #53646e; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1100" height="900" fill="#fff"/>
+  <text class="title" x="40" y="48">問い合わせ導線：共通フォームからWeb3Formsへ</text>
+  <text class="note" x="40" y="80">受信先の実アドレスはサービス側で管理。受付・返信の詳細な方針は打ち合わせで確定する。</text>
+
+  <rect class="box" x="60" y="130" width="600" height="145" rx="8"/>
+  <text class="node" x="360" y="166" text-anchor="middle">共通のお問い合わせフォーム</text>
+  <text class="note" x="360" y="198" text-anchor="middle">名前・会社（任意）・返信先メール・本文</text>
+  <text class="note" x="360" y="224" text-anchor="middle">利用目的を確認し、hCaptchaを完了</text>
+  <text class="note" x="360" y="250" text-anchor="middle">種類選択なし・同じ受付先と件名で対応</text>
+
+  <rect class="external" x="740" y="130" width="320" height="110" rx="8"/>
+  <text class="node" x="900" y="166" text-anchor="middle">事業サービスの相談</text>
+  <text class="note" x="900" y="195" text-anchor="middle">関連事業の承認済み外部窓口へ</text>
+  <text class="note" x="900" y="222" text-anchor="middle">本人への問い合わせとは分離</text>
+
+  <rect class="box" x="740" y="345" width="320" height="100" rx="8"/>
+  <text class="node" x="900" y="386" text-anchor="middle">入力を保持して案内</text>
+  <text class="note" x="900" y="416" text-anchor="middle">修正・再認証して再試行</text>
+  <path class="path" d="M660 202 H700 V395 H730"/>
+  <text class="note" x="740" y="324">入力・認証・通信エラー</text>
+
+  <rect class="external" x="60" y="370" width="600" height="100" rx="8"/>
+  <text class="node" x="360" y="411" text-anchor="middle">HTTPSでWeb3Formsへ送信</text>
+  <text class="note" x="360" y="442" text-anchor="middle">HTTP正常かつsuccess=trueで受付を表示</text>
+  <path class="path" d="M360 275 V360"/>
+  <path class="path" d="M660 420 H730"/>
+  <path class="path" d="M900 445 V510 H25 V202 H50"/>
+
+  <rect class="external" x="60" y="590" width="600" height="100" rx="8"/>
+  <text class="node" x="360" y="632" text-anchor="middle">非公開の受信箱へ通知</text>
+  <text class="note" x="360" y="664" text-anchor="middle">既存のメールアプリで返信・Reply-Toを使用</text>
+  <path class="path" d="M360 470 V580"/>
+
+  <rect class="scope" x="40" y="750" width="1020" height="105" rx="8"/>
+  <text class="node" x="550" y="782" text-anchor="middle">サービス側hCaptcha：有効化済み（依頼者確認）</text>
+  <text class="note" x="550" y="812" text-anchor="middle">公開前にHTTPSで人が認証し、受信箱・Reply-To・返信元を確認する。</text>
+  <text class="note" x="550" y="838" text-anchor="middle">ローカルは表示確認のみ。認証のない送信は行わない。</text>
+  <text class="note" x="40" y="882">APIの受付とメールの到着は別に確認。受信先の実アドレスは公開コードに保存しない。</text>
+</svg>

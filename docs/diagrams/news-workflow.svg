@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="1020" viewBox="0 0 1100 1020" role="img" aria-labelledby="title description">
+  <title id="title">ニュースの登録、承認、予約公開、訂正の提案フロー</title>
+  <desc id="description">運営担当者が記事を下書きし、日時、権利、解禁時刻を確認して承認します。承認されない記事は修正へ戻します。将来の公開日時なら予約待ち、公開可能なら公開し、表示を確認します。反映の失敗は保守担当者へ通知し、訂正や出演中止では変更履歴を残して再確認します。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#53646e"/>
+    </marker>
+    <style>
+      text { font-family: "Yu Gothic", Meiryo, sans-serif; fill: #172a33; }
+      .title { font-size: 28px; font-weight: 700; }
+      .node { font-size: 20px; font-weight: 700; }
+      .note { font-size: 16px; }
+      .box { fill: #edf3f5; stroke: #b4c6ce; stroke-width: 1.5; }
+      .warning { fill: #fff1e9; stroke: #d6b198; stroke-width: 1.5; }
+      .published { fill: #e8f2ed; stroke: #a4c5b5; stroke-width: 1.5; }
+      .path { fill: none; stroke: #53646e; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1100" height="1020" fill="#fff"/>
+  <text class="title" x="40" y="48">ニュース更新の運用フロー</text>
+  <text class="note" x="40" y="80">提案。編集・承認の担当は未決定。同じ担当者が兼ねる場合も、確認項目は省かない。</text>
+
+  <rect class="box" x="390" y="120" width="320" height="85" rx="8"/>
+  <text class="node" x="550" y="153" text-anchor="middle">記事を下書き保存</text>
+  <text class="note" x="550" y="181" text-anchor="middle">タイトル・公開日時・出演日時等</text>
+  <rect class="box" x="390" y="255" width="320" height="85" rx="8"/>
+  <text class="node" x="550" y="288" text-anchor="middle">承認者が確認</text>
+  <text class="note" x="550" y="316" text-anchor="middle">日時・リンク・権利・情報解禁</text>
+  <path class="path" d="M550 205 V245"/>
+
+  <rect class="warning" x="40" y="255" width="270" height="85" rx="8"/>
+  <text class="node" x="175" y="288" text-anchor="middle">内容を修正</text>
+  <text class="note" x="175" y="316" text-anchor="middle">差し戻し理由を確認</text>
+  <path class="path" d="M390 297 H320"/>
+  <text class="note" x="325" y="280">未承認</text>
+  <path class="path" d="M175 255 V162 H380"/>
+
+  <polygon class="box" points="550,390 710,450 550,510 390,450"/>
+  <text class="node" x="550" y="444" text-anchor="middle">公開日時を確認</text>
+  <text class="note" x="550" y="470" text-anchor="middle">解禁前の情報は表示しない</text>
+  <path class="path" d="M550 340 V380"/>
+  <text class="note" x="570" y="370">承認済み</text>
+  <rect class="box" x="40" y="410" width="270" height="85" rx="8"/>
+  <text class="node" x="175" y="443" text-anchor="middle">予約待ち</text>
+  <text class="note" x="175" y="471" text-anchor="middle">指定した日時まで非公開</text>
+  <path class="path" d="M390 450 H320"/>
+  <text class="note" x="325" y="432">未来</text>
+
+  <rect class="published" x="390" y="575" width="320" height="85" rx="8"/>
+  <text class="node" x="550" y="608" text-anchor="middle">公開画面へ反映</text>
+  <text class="note" x="550" y="636" text-anchor="middle">一覧・記事・トップを更新</text>
+  <path class="path" d="M550 510 V565"/>
+  <text class="note" x="570" y="545">公開可能</text>
+  <path class="path" d="M175 495 V617 H380"/>
+  <text class="note" x="190" y="590">指定日時になったら</text>
+
+  <rect class="warning" x="790" y="575" width="270" height="85" rx="8"/>
+  <text class="node" x="925" y="608" text-anchor="middle">保守担当者へ通知</text>
+  <text class="note" x="925" y="636" text-anchor="middle">直前の公開版を保持・再反映</text>
+  <path class="path" d="M710 617 H780"/>
+  <text class="note" x="725" y="598">反映失敗</text>
+
+  <rect class="published" x="390" y="720" width="320" height="85" rx="8"/>
+  <text class="node" x="550" y="753" text-anchor="middle">公開結果を確認</text>
+  <text class="note" x="550" y="781" text-anchor="middle">PC・スマートフォン・外部リンク</text>
+  <path class="path" d="M550 660 V710"/>
+  <text class="note" x="570" y="694">反映成功</text>
+
+  <rect class="box" x="390" y="865" width="320" height="85" rx="8"/>
+  <text class="node" x="550" y="898" text-anchor="middle">変更・訂正・出演中止</text>
+  <text class="note" x="550" y="926" text-anchor="middle">変更内容と更新日を残す</text>
+  <path class="path" d="M550 805 V855"/>
+  <path class="path" d="M390 907 H20 V225 H550 V245"/>
+  <text class="note" x="40" y="990">掲載終了や出演後は記録として残す方針を提案。削除、保存年限、緊急時の承認方法は別途合意する。</text>
+</svg>

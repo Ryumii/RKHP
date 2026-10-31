@@ -1,0 +1,18 @@
+# Regenerated taste-skill inspection output
+.taste-skill/inspect*/
+
+# Generated site output and local-only materials
+/dist/
+/.agents/
+/AGENTS.md
+/.github/copilot-instructions.md
+/skills-lock.json
+/feature idea.md
+/docs/skills-management.md
+/assets/profile/profile1.jpg
+/assets/profile/profile4.jpg
+/assets/regular-media/sample-*.png
+node_modules/
+.env
+.env.*
+!.env.example

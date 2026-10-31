@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="820" viewBox="0 0 1100 820" role="img" aria-labelledby="title description">
+  <title id="title">一般公開の本人公式サイトに見られる導線</title>
+  <desc id="description">kemioの写真とSNSを中心にした構成、ふかわりょうの更新情報から予定へ進む構成、落合陽一の作品と経歴から仕事依頼へ進む構成を比較しています。調査範囲の導線を整理した図であり、各サイトの全ページを示すものではありません。</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0 0 L10 5 L0 10 Z" fill="#53646e"/>
+    </marker>
+    <style>
+      text { font-family: "Yu Gothic", Meiryo, sans-serif; fill: #172a33; }
+      .title { font-size: 28px; font-weight: 700; }
+      .label { font-size: 21px; font-weight: 700; }
+      .node { font-size: 20px; }
+      .note { font-size: 16px; }
+      .box { fill: #edf3f5; stroke: #b4c6ce; stroke-width: 1.5; }
+      .external { fill: #e8f2ed; stroke: #a4c5b5; stroke-width: 1.5; }
+      .path { fill: none; stroke: #53646e; stroke-width: 2; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1100" height="820" fill="#fff"/>
+  <text class="title" x="40" y="48">本人公式サイトの導線パターン</text>
+  <text class="note" x="40" y="80">確認した公開部分から整理。会員登録・オンラインサロンの導線は含めない。</text>
+
+  <text class="label" x="40" y="140">写真・SNS中心：kemio</text>
+  <rect class="box" x="40" y="180" width="220" height="80" rx="8"/>
+  <text class="node" x="150" y="215" text-anchor="middle">画像で本人像を示す</text>
+  <text class="note" x="150" y="240" text-anchor="middle">トップ</text>
+  <rect class="box" x="340" y="180" width="220" height="80" rx="8"/>
+  <text class="node" x="450" y="215" text-anchor="middle">プロフィール</text>
+  <text class="note" x="450" y="240" text-anchor="middle">本人像と活動の説明</text>
+  <rect class="external" x="710" y="160" width="340" height="65" rx="8"/>
+  <text class="node" x="880" y="200" text-anchor="middle">SNSへ移動</text>
+  <rect class="external" x="710" y="250" width="340" height="65" rx="8"/>
+  <text class="node" x="880" y="290" text-anchor="middle">問い合わせメールを開く</text>
+  <path class="path" d="M260 220 H330"/>
+  <path class="path" d="M560 220 H630 V192 H700"/>
+  <path class="path" d="M630 220 V282 H700"/>
+
+  <text class="label" x="40" y="380">ニュース・予定中心：ふかわりょう</text>
+  <rect class="box" x="40" y="420" width="260" height="90" rx="8"/>
+  <text class="node" x="170" y="458" text-anchor="middle">トップの更新情報</text>
+  <text class="note" x="170" y="485" text-anchor="middle">NEWS</text>
+  <rect class="box" x="420" y="420" width="260" height="90" rx="8"/>
+  <text class="node" x="550" y="458" text-anchor="middle">予定一覧を開く</text>
+  <text class="note" x="550" y="485" text-anchor="middle">SCHEDULE</text>
+  <rect class="box" x="800" y="420" width="260" height="90" rx="8"/>
+  <text class="node" x="930" y="458" text-anchor="middle">放送・イベント案内</text>
+  <text class="note" x="930" y="485" text-anchor="middle">日時・内容を確認</text>
+  <path class="path" d="M300 465 H410"/>
+  <path class="path" d="M680 465 H790"/>
+
+  <text class="label" x="40" y="600">作品・仕事依頼中心：落合陽一</text>
+  <rect class="box" x="40" y="640" width="260" height="90" rx="8"/>
+  <text class="node" x="170" y="678" text-anchor="middle">映像を使った入口</text>
+  <text class="note" x="170" y="705" text-anchor="middle">世界観を伝える</text>
+  <rect class="box" x="420" y="640" width="260" height="90" rx="8"/>
+  <text class="node" x="550" y="678" text-anchor="middle">作品・経歴・活動情報</text>
+  <text class="note" x="550" y="705" text-anchor="middle">目的別のページ</text>
+  <rect class="external" x="800" y="640" width="260" height="90" rx="8"/>
+  <text class="node" x="930" y="678" text-anchor="middle">仕事依頼フォーム</text>
+  <text class="note" x="930" y="705" text-anchor="middle">Contact</text>
+  <path class="path" d="M300 685 H410"/>
+  <path class="path" d="M680 685 H790"/>
+  <text class="note" x="40" y="786">岸谷蘭丸サイトでは、本人像・最新情報・外部リンク・仕事依頼を併せ持つ構成を検討する。</text>
+</svg>
