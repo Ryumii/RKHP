@@ -6,6 +6,7 @@
 /.agents/
 /AGENTS.md
 /.github/copilot-instructions.md
+/.vscode/
 /skills-lock.json
 /feature idea.md
 /docs/skills-management.md
