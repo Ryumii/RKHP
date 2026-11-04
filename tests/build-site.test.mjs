@@ -32,7 +32,7 @@ test("the real site exports only its runtime files and selected display images",
   assert.deepEqual(listing(join(root, "dist")), files);
   assert.equal(files.length, 18);
   assert(files.includes("assets/regular-media/ナマリッジ　バナー.jpg"));
-  assert(!files.some(name => /^(?:docs|tests|scripts|\.agents|\.github)\//.test(name)));
+  assert(!files.some(name => /^(?:docs|tests|scripts|workers|\.agents|\.github)\//.test(name)));
   assert(!files.includes("assets/profile/profile1.jpg"));
   assert(!readFileSync(join(root, "dist", "index.html"), "utf8").includes('href="docs/'));
 });

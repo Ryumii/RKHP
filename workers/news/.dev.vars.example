@@ -1,0 +1,3 @@
+NEWS_SOURCE={"spreadsheetId":"REPLACE_PRIVATE_SHEET_ID","worksheet":"フォームの回答 1","driveFolderId":"REPLACE_PRIVATE_FOLDER_ID","columns":{}}
+GOOGLE_SERVICE_ACCOUNT={"client_email":"replace@replace.iam.gserviceaccount.com","private_key":"-----BEGIN PRIVATE KEY-----\nREPLACE\n-----END PRIVATE KEY-----\n"}
+STATUS_TOKEN=REPLACE_WITH_A_RANDOM_TOKEN_OF_AT_LEAST_32_CHARACTERS

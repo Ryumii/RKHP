@@ -15,13 +15,21 @@
 Node.js 22を使います。npmの依存追加は不要です。
 
 ```powershell
-node --test ".\tests\build-site.test.mjs"
+node --test ".\tests\build-site.test.mjs" ".\tests\news-sync.test.mjs" ".\tests\google-news-sheet.test.mjs" ".\tests\browser-unit.test.mjs"
 node ".\scripts\build-site.mjs"
 ```
 
 生成される`dist`にはHTML・CSS・JavaScriptと、表示用の人物写真・SNSロゴ・掲載中の番組バナーだけを入れます。番組画像は[content.js](./content.js)の設定から取得します。
 
 仕様書・テスト・作業用設定はWeb配信しません。人物写真の原本、スキル設定、作業メモ、未使用の仮ロゴはGitHubへのアップロードからも除外しています。
+
+## ニュース管理
+
+非公開のGoogle Sheets・Forms・Driveを、Cloudflare WorkersとR2へ連携するコードを追加しました。テストと本番で、シート・画像フォルダー・連携アカウント・列名の対応を切り替えられます。HPの表示は掲載日時の新しい順です。
+
+設定手順は[ニュース管理](./docs/news-management.md)、入力列は[テスト用CSV](./docs/news-sheet-template.csv)を参照してください。実シートとCloudflareへの接続はまだ行っておらず、既存デモは明示的なサンプルモードのままです。
+
+`workers` は静的サイトの公開用フォルダーへ含めません。ニュースWorkerは、制作資料や秘密設定を含めずに別途デプロイします。
 
 ## デモの更新
 
@@ -52,3 +60,4 @@ Direct Uploadのプロジェクトは、あとから同じプロジェクトをG
 - [要件定義書](./docs/requirements-definition.md)
 - [公式サイト比較レポート](./docs/research-report.md)
 - [非エンジニア向けの更新方法](./docs/media-update-options.md)
+- [Sheets・Formsのニュース管理と切替手順](./docs/news-management.md)

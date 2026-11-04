@@ -18,7 +18,7 @@
 </head>
 <body>
   <a class="skip-link" href="#main">本文へ移動</a>
-  <div class="beta-notice">デザイン確認用ベータです。ニュース・紹介文はサンプルです。</div>
+  <div class="beta-notice" id="beta-notice">デザイン確認用ベータです。ニュース・紹介文はサンプルです。</div>
   <header class="site-header">
     <a class="wordmark" href="#top" aria-label="岸谷蘭丸 トップへ"><span>RK</span><span>岸谷蘭丸</span></a>
     <button class="menu-toggle" type="button" aria-controls="site-nav" aria-expanded="false" hidden>
@@ -120,6 +120,7 @@
           <button type="button" data-category="info" aria-pressed="false">お知らせ</button>
         </div>
         <p class="news-count" id="news-count" role="status" aria-live="polite"></p>
+        <p class="sample-note" id="news-update-status" role="status" hidden></p>
         <div class="news-list" id="news-list"><p>ニュースを読み込んでいます。</p></div>
         <noscript><p class="message">このベータのニュース・レギュラーメディア表示にはJavaScriptが必要です。プロフィール、外部リンク、問い合わせ案内はそのまま閲覧できます。</p></noscript>
       </div>
@@ -211,7 +212,7 @@
   <footer class="site-footer">
     <a class="footer-name" href="#top">岸谷蘭丸<span aria-hidden="true">↑</span></a>
     <div class="footer-meta">
-      <p>UIベータ／ニュース・紹介文はサンプルです。</p>
+      <p id="footer-demo-note">UIベータ／ニュース・紹介文はサンプルです。</p>
       <button type="button" class="credits-toggle" id="credits-toggle" aria-controls="credits" aria-expanded="false" hidden>素材の出典・利用条件</button>
     </div>
     <div class="credits" id="credits">

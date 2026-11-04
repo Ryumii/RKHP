@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
-      - run: node --test tests/build-site.test.mjs
+      - run: node --test tests/build-site.test.mjs tests/news-sync.test.mjs tests/google-news-sheet.test.mjs tests/browser-unit.test.mjs
       - run: node scripts/build-site.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

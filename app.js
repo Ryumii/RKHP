@@ -14,6 +14,7 @@
     return node;
   }
   const watchedImages = new WeakSet();
+  let revealObserver;
   function watchImage(image) {
     if (watchedImages.has(image)) return;
     watchedImages.add(image);
@@ -76,7 +77,7 @@
     credits.hidden = !expanded;
   });
 
-  function newsRow(item) {
+  function newsRow(item, sample) {
     const details = element("details", "news-item");
     details.id = item.id;
     const summary = element("summary", "news-item__summary");
@@ -88,7 +89,7 @@
     summary.append(meta, title, element("span", "news-item__expand", "+"));
     summary.lastElementChild.setAttribute("aria-hidden", "true");
     const body = element("div", "news-item__body");
-    body.append(element("p", "sample-label", "表示確認用サンプル・実際の出演情報ではありません"));
+    if (sample) body.append(element("p", "sample-label", "表示確認用サンプル・実際の出演情報ではありません"));
     if (item.startsAt) body.append(element("p", "news-item__when", `${window.RKNews.formatDate(item.startsAt, "event")}（日本時間）`));
     if (item.image) {
       const image = element("img", "news-item__image");
@@ -101,6 +102,14 @@
       body.append(image);
     }
     item.paragraphs.forEach((text) => body.append(element("p", "", text)));
+    if (item.url) {
+      const link = externalLink("", item.url, "掲載先を見る ");
+      link.setAttribute("aria-label", "掲載先を見る（新しいタブ）");
+      const arrow = element("span", "", "↗");
+      arrow.setAttribute("aria-hidden", "true");
+      link.append(arrow);
+      body.append(link);
+    }
     details.append(summary, body);
     details.addEventListener("toggle", () => {
       summary.lastElementChild.textContent = details.open ? "−" : "+";
@@ -157,19 +166,28 @@
     reportError("レギュラーメディアの読み込みに失敗しました。設定を確認してください。", error);
   }
 
-  try {
+  async function initializeNews() {
     if (!window.RKNews || !window.RK_CONTENT) throw new Error("表示データまたは処理ファイルが読み込まれていません。");
     const data = window.RK_CONTENT;
-    window.RKNews.validateNews(data.news);
     const list = document.querySelector("#news-list");
     const filters = document.querySelector(".news-filters");
+    list.replaceChildren(element("p", "message", "ニュースを読み込んでいます。"));
+    const result = await window.RKNews.loadNews(data.newsSource, data.news);
+    if (!result.sample) {
+      document.querySelector("#beta-notice").textContent = "デザイン確認用ベータです。紹介文はサンプルです。";
+      document.querySelector("#footer-demo-note").textContent = "UIベータ／紹介文はサンプルです。";
+    }
+    const status = document.querySelector("#news-update-status");
+    status.hidden = !result.stale;
+    status.textContent = result.stale ? "最新の更新を確認できません。最終確認済みの情報を表示しています。" : "";
     function renderNews(category) {
-      const items = window.RKNews.selectNews(data.news, category);
+      const items = window.RKNews.selectNews(result.items, category);
       const fragment = document.createDocumentFragment();
-      items.forEach((item) => fragment.append(newsRow(item)));
+      items.forEach((item) => fragment.append(newsRow(item, result.sample)));
       if (!items.length) fragment.append(element("p", "message", "このカテゴリのお知らせはまだありません。"));
       list.replaceChildren(fragment);
-      document.querySelector("#news-count").textContent = `${window.RKNews.categories[category]}：${items.length}件（サンプル）`;
+      list.querySelectorAll(".news-item").forEach(node => revealObserver?.observe(node));
+      document.querySelector("#news-count").textContent = `${window.RKNews.categories[category]}：${items.length}件${result.sample ? "（サンプル）" : ""}`;
       filters.querySelectorAll("button").forEach((button) => {
         button.setAttribute("aria-pressed", String(button.dataset.category === category));
       });
@@ -186,10 +204,13 @@
       }
     });
 
-  } catch (error) {
-    document.querySelector("#news-list").replaceChildren(element("p", "message", "ニュースを表示できませんでした。ページを再読み込みしてください。"));
-    reportError("表示データの読み込みに失敗しました。ニュースの設定を確認してください。", error);
   }
+  initializeNews().catch(error => {
+    const message = element("p", "message", "ニュースを表示できませんでした。時間をおいて再読み込みしてください。");
+    message.setAttribute("role", "alert");
+    document.querySelector("#news-list").replaceChildren(message);
+    reportError("表示データの読み込みに失敗しました。ニュースの設定を確認してください。", error);
+  });
 
   const contactForm = document.querySelector("#contact-form");
   const contactFields = document.querySelector("#contact-fields");
@@ -359,13 +380,13 @@
 
   document.querySelectorAll("img").forEach(watchImage);
   if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    const observer = new IntersectionObserver((entries) => {
+    revealObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
         entry.target.classList.add("is-revealed");
-        observer.unobserve(entry.target);
+        revealObserver.unobserve(entry.target);
       });
     }, { threshold: 0.12 });
-    document.querySelectorAll(".hero-copy > *, .hero-figure, .section-intro, .news-item, .regular-media-logo, .profile-copy > *, .social-links > a").forEach((node) => observer.observe(node));
+    document.querySelectorAll(".hero-copy > *, .hero-figure, .section-intro, .news-item, .regular-media-logo, .profile-copy > *, .social-links > a").forEach((node) => revealObserver.observe(node));
   }
 })();

@@ -1,5 +1,6 @@
 // ご提供のレギュラーメディアと表示確認用ニュース。未公開原稿は入れない。
 window.RK_CONTENT = Object.freeze({
+  newsSource: { mode: "sample" },
   contact: {
     // Web3Formsの公開用フォーム識別子。受信先アドレスや秘密のAPIキーではない。
     accessKey: "6cca681d-c351-4597-95b0-2820aeb45c3e",

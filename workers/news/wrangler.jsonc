@@ -1,0 +1,32 @@
+{
+  "name": "rkhp-news",
+  "main": "index.mjs",
+  "compatibility_date": "2026-11-04",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "logs": { "invocation_logs": false }
+  },
+  "env": {
+    "test": {
+      "name": "rkhp-news-test",
+      "vars": {
+        "NEWS_ENV": "test",
+        "PUBLIC_ORIGIN": "https://replace-news-test.example.com",
+        "SITE_ORIGIN": "https://replace-site-test.example.com"
+      },
+      "r2_buckets": [{ "binding": "NEWS_BUCKET", "bucket_name": "rkhp-news-test" }],
+      "triggers": { "crons": ["*/5 * * * *"] }
+    },
+    "production": {
+      "name": "rkhp-news-production",
+      "vars": {
+        "NEWS_ENV": "production",
+        "PUBLIC_ORIGIN": "https://replace-news.example.com",
+        "SITE_ORIGIN": "https://replace-site.example.com"
+      },
+      "r2_buckets": [{ "binding": "NEWS_BUCKET", "bucket_name": "rkhp-news-production" }],
+      "triggers": { "crons": ["*/5 * * * *"] }
+    }
+  }
+}

@@ -1,9 +1,9 @@
 "use strict";
 
-window.RKNews = (() => {
+globalThis.RKNews = (() => {
   const categories = Object.freeze({ all: "すべて", media: "メディア", event: "イベント", info: "お知らせ" });
   const regularCategories = Object.freeze({ all: "すべて", terrestrial: "地上波", internet: "ネット", radio: "ラジオ" });
-  const datePattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:Z|[+-]\d{2}:\d{2})$/;
+  const datePattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
 
   function isDate(value) {
     if (typeof value !== "string") return false;
@@ -49,6 +49,7 @@ window.RKNews = (() => {
         if (typeof item.imageAlt !== "string" || !item.imageAlt.trim()) {
           throw new TypeError("画像にはHTTPSのURLと代替テキストを指定してください。");
         }
+        if (item.url !== undefined) validateHttpsUrl(item.url);
       }
     }
     return items;
@@ -97,5 +98,28 @@ window.RKNews = (() => {
     return new Intl.DateTimeFormat("ja-JP", { ...options, timeZone: "Asia/Tokyo" }).format(new Date(value));
   }
 
-  return Object.freeze({ categories, regularCategories, validateNews, selectNews, validateRegularMedia, selectRegularMedia, formatDate });
+  async function loadNews(source, samples, request = globalThis.fetch) {
+    if (!source || !["sample", "api"].includes(source.mode)) throw new TypeError("ニュースの取得方法が未設定です。");
+    if (source.mode === "sample") return { items: selectNews(samples), sample: true, stale: false };
+    validateHttpsUrl(source.endpoint);
+    const url = new URL(source.endpoint);
+    if (url.pathname !== "/api/news" || url.search || url.hash || /(^|\.)google\.com$/i.test(url.hostname)) {
+      throw new TypeError("ニュースAPIの設定を確認してください。");
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const response = await request(url.href, { signal: controller.signal, credentials: "omit", cache: "no-store" });
+      if (!response.ok) throw new Error("ニュースを取得できませんでした。時間をおいて再読み込みしてください。");
+      const result = await response.json();
+      if (!result || result.version !== 1 || typeof result.stale !== "boolean" || !isDate(result.updatedAt)) {
+        throw new TypeError("ニュースAPIの応答形式が正しくありません。");
+      }
+      return { items: selectNews(result.items), sample: false, stale: result.stale };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  return Object.freeze({ categories, regularCategories, validateNews, selectNews, validateRegularMedia, selectRegularMedia, formatDate, loadNews });
 })();

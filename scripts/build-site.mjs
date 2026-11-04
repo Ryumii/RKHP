@@ -12,7 +12,7 @@ export function buildSite(rootDir) {
   for (const name of ["content.js", "news.js"]) {
     runInContext(readFileSync(join(root, name), "utf8"), context, { filename: name, timeout: 1000 });
   }
-  const media = context.window.RKNews.validateRegularMedia(context.window.RK_CONTENT.regularMedia);
+  const media = context.RKNews.validateRegularMedia(context.window.RK_CONTENT.regularMedia);
   const files = [...new Set([
     "index.html", "styles.css", "content.js", "news.js", "contact.js", "app.js",
     "assets/profile/profile1-web.jpg", "assets/profile/profile4-web.jpg",
