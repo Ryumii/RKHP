@@ -5,6 +5,7 @@
 ## 公開先
 
 - デモ：[GitHub Pages](https://ryumii.github.io/RKHP/)
+- ニュース連携テスト：[CloudflareのテストHP](https://rkhp-news-test.rkhp-preview-d0f68d.workers.dev/)。実シートから手動反映した架空ニュースを表示します。
 - ソース：[Ryumii/RKHP](https://github.com/Ryumii/RKHP)
 - 本番：Cloudflareで公開予定。独自ドメインは指定済みですが、サイト本体の配信設定は未実施です。
 
@@ -27,7 +28,9 @@ node ".\scripts\build-site.mjs"
 
 非公開のGoogle Sheets・Forms・Driveを、所有者が認可したApps ScriptからCloudflare WorkersとR2へ連携します。Googleの秘密鍵は使わず、公開対象だけを送信します。テストと本番で、シート・画像フォルダー・所有者・列名の対応を切り替えられます。HPの表示は掲載日時の新しい順です。
 
-設定手順は[ニュース管理](./docs/news-management.md)、入力列は[テスト用CSV](./docs/news-sheet-template.csv)を参照してください。テスト用Workerと非公開R2は準備済みです。シート所有者によるApps Scriptの導入・認可・初回送信は未実施で、既存デモは明示的なサンプルモードのままです。
+設定手順は[ニュース管理](./docs/news-management.md)、入力列は[テスト用CSV](./docs/news-sheet-template.csv)を参照してください。実シートの入力6行を読み取り、公開対象4件をテスト用API・HPへ手動反映できることを確認しました。下書き・未来の記事は公開しません。
+
+Apps Scriptによる定期更新と実画像の取り込みは未確認です。既存のGitHub Pagesデモと通常のソース設定はサンプルモードのままで、本番DNSも変更していません。
 
 `workers` は静的サイトの公開用フォルダーへ含めません。ニュースWorkerは、制作資料や秘密設定を含めずに別途デプロイします。
 
