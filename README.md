@@ -26,7 +26,7 @@ node ".\scripts\build-site.mjs"
 
 ## ニュース管理
 
-非公開のGoogle Sheets・Forms・Driveを、所有者が認可したApps ScriptからCloudflare WorkersとR2へ連携します。Googleの秘密鍵は使わず、公開対象だけを送信します。テストと本番で、シート・画像フォルダー・所有者・列名の対応を切り替えられます。HPの表示は掲載日時の新しい順です。
+非公開のGoogle Sheets・Forms・Driveを、所有者が認可したApps ScriptからCloudflare WorkersとR2へ連携します。Googleの秘密鍵は使わず、公開対象だけを送信します。テストと本番で、シート・画像フォルダー・所有者・列名の対応を切り替えられます。掲載日は日付だけを入力し、HPでは新しい日付の順、同日は固定ID順に表示します。Formは年を含む「日付」質問を使い、時刻は追加しません。
 
 設定手順は[ニュース管理](./docs/news-management.md)、入力列は[テスト用CSV](./docs/news-sheet-template.csv)を参照してください。実シートの入力6行を読み取り、公開対象4件をテスト用API・HPへ手動反映できることを確認しました。下書き・未来の記事は公開しません。
 

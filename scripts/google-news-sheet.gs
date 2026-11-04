@@ -28,7 +28,13 @@ function prepareNewsSheet() {
   }
   for (const name of ["掲載日時", "出演・開催日時"]) {
     const column = headers.indexOf(name);
-    if (column >= 0) sheet.getRange(2, column + 1, sheet.getMaxRows() - 1, 1).setNumberFormat("yyyy/mm/dd hh:mm");
+    if (column >= 0) {
+      const range = sheet.getRange(2, column + 1, sheet.getMaxRows() - 1, 1);
+      range.setNumberFormat(name === "掲載日時" ? "yyyy/mm/dd" : "yyyy/mm/dd hh:mm");
+      if (name === "掲載日時") {
+        range.setDataValidation(SpreadsheetApp.newDataValidation().requireDate().setAllowInvalid(false).build());
+      }
+    }
   }
   for (const name of ["記事ID", "最終反映日時", "反映結果"]) {
     const range = sheet.getRange(2, headers.indexOf(name) + 1, sheet.getMaxRows() - 1, 1);
@@ -89,9 +95,9 @@ function configureNewsPublisher_(seed) {
   if (seed) {
     const sheet = SpreadsheetApp.getActiveSheet(), headers = sheet.getDataRange().getDisplayValues()[0];
     const examples = [
-      { "掲載日時": "2026/11/04 10:00", "タイトル": "テスト記事：新しい日付", "カテゴリ": "お知らせ" },
-      { "掲載日時": "2026/10/20 09:00", "タイトル": "テスト記事：古い日付", "カテゴリ": "メディア" },
-      { "掲載日時": "2026/11/02 12:00", "タイトル": "テスト記事：中間の日付", "カテゴリ": "イベント" }
+      { "掲載日時": "2026/11/04", "タイトル": "テスト記事：新しい日付", "カテゴリ": "お知らせ" },
+      { "掲載日時": "2026/10/20", "タイトル": "テスト記事：古い日付", "カテゴリ": "メディア" },
+      { "掲載日時": "2026/11/02", "タイトル": "テスト記事：中間の日付", "カテゴリ": "イベント" }
     ];
     sheet.getRange(2, 1, examples.length, headers.length).setValues(examples.map(example =>
       headers.map(header => header === "本文" ? "表示順を確認する架空データです。実際の出演情報ではありません。" :
@@ -117,7 +123,7 @@ function newsError_(code, row) {
   return error;
 }
 
-function newsDate_(value, row) {
+function newsDate_(value, row, publication = false) {
   let result;
   if (Object.prototype.toString.call(value) === "[object Date]" && !isNaN(value.getTime())) {
     result = Utilities.formatDate(value, "Asia/Tokyo", "yyyy-MM-dd'T'HH:mm:ss") + "+09:00";
@@ -131,7 +137,7 @@ function newsDate_(value, row) {
   if (!parts || !Number.isFinite(Date.parse(result)) || Number(parts[2]) < 1 || Number(parts[2]) > 12 ||
       Number(parts[3]) < 1 || Number(parts[3]) > new Date(Date.UTC(Number(parts[1]), Number(parts[2]), 0)).getUTCDate() ||
       Number(parts[4]) > 23 || Number(parts[5]) > 59 || Number(parts[6]) > 59) throw newsError_("DATE_INVALID", row);
-  return result;
+  return publication ? Utilities.formatDate(new Date(result), "Asia/Tokyo", "yyyy-MM-dd") + "T00:00:00+09:00" : result;
 }
 
 function newsPublisherRows_(values, properties, now) {
@@ -161,7 +167,7 @@ function newsPublisherRows_(values, properties, now) {
     if (typeof id !== "string" || !/^[a-z0-9-]{1,100}$/.test(id) || ids.has(id)) throw newsError_("ID_INVALID", row);
     ids.add(id); states.set(id, status);
     if (status !== "公開") continue;
-    const publishedAt = newsDate_(get("publishedAt"), row);
+    const publishedAt = newsDate_(get("publishedAt"), row, true);
     if (Date.parse(publishedAt) > now) { states.set(id, "公開待ち"); continue; }
     const record = { id, status: "公開", publishedAt, title: get("title"), category: get("category"), body: get("body"),
       startsAt: get("startsAt") === "" ? "" : newsDate_(get("startsAt"), row), url: get("url"), sourceRow: row };

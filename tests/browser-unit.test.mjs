@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
 import test from "node:test";
 
-test("the existing 62 browser helper checks also pass in Node", () => {
+test("the 64 browser helper checks also pass in Node", () => {
   const rows = [], result = {}, body = { dataset: {} };
   const document = {
     body,
@@ -21,7 +21,7 @@ test("the existing 62 browser helper checks also pass in Node", () => {
     runInContext(readFileSync(new URL("../" + name, import.meta.url), "utf8"), context, { filename: name });
   }
   assert.equal(body.dataset.testStatus, "passed");
-  assert.equal(rows.length, 62);
+  assert.equal(rows.length, 64);
   assert(rows.every(row => row.className === "pass"));
-  assert.equal(result.textContent, "62件成功、0件失敗");
+  assert.equal(result.textContent, "64件成功、0件失敗");
 });

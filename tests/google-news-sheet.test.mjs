@@ -73,7 +73,7 @@ function fixture(data = []) {
     SpreadsheetApp: {
       getActiveSheet: () => sheet, getActive: () => book, getUi: () => ui, ProtectionType: { RANGE: "range" },
       newDataValidation() {
-        return { requireValueInList(values) { this.values = Array.from(values); return this; }, setAllowInvalid(value) { this.allowInvalid = value; return this; }, build() { return this; } };
+        return { requireValueInList(values) { this.values = Array.from(values); return this; }, requireDate() { this.date = true; return this; }, setAllowInvalid(value) { this.allowInvalid = value; return this; }, build() { return this; } };
       }
     },
     Session: { getEffectiveUser: () => owner },
@@ -81,7 +81,7 @@ function fixture(data = []) {
       getUuid: randomUUID, DigestAlgorithm: { SHA_256: "SHA-256" },
       computeDigest: (_, value) => [...createHash("sha256").update(value).digest()],
       base64EncodeWebSafe: bytes => Buffer.from(bytes).toString("base64url"),
-      formatDate: value => new Date(value.getTime() + 9 * 3600000).toISOString().slice(0, 19)
+      formatDate: (value, timezone, format) => new Date(value.getTime() + 9 * 3600000).toISOString().slice(0, format === "yyyy-MM-dd" ? 10 : 19)
     },
     LockService: { getDocumentLock: () => ({ waitLock() { state.held = true; }, releaseLock() { state.held = false; } }) },
     PropertiesService: { getScriptProperties: () => ({
@@ -140,7 +140,10 @@ test("an empty test sheet receives the complete schema, category choices and dat
   assert.equal(headers.length, 12);
   assert.deepEqual(state.validations.get(headers.indexOf("カテゴリ") + 1).values, ["メディア", "イベント", "お知らせ"]);
   assert.equal(state.validations.get(headers.indexOf("カテゴリ") + 1).allowInvalid, false);
-  assert.equal(state.formats.get(headers.indexOf("掲載日時") + 1), "yyyy/mm/dd hh:mm");
+  assert.equal(state.formats.get(headers.indexOf("掲載日時") + 1), "yyyy/mm/dd");
+  assert.equal(state.validations.get(headers.indexOf("掲載日時") + 1).date, true);
+  assert.equal(state.validations.get(headers.indexOf("掲載日時") + 1).allowInvalid, false);
+  assert.equal(state.formats.get(headers.indexOf("出演・開催日時") + 1), "yyyy/mm/dd hh:mm");
   assert.equal(state.timezone, "Asia/Tokyo");
 });
 
@@ -223,7 +226,7 @@ test("owner test setup seeds shuffled dates, publishes once and installs keyless
   script.setupNewsTest();
   assert.equal(state.timezone, "Asia/Tokyo");
   assert.equal(state.data[0].length, 12);
-  assert.deepEqual(state.data.slice(1).map(row => row[0]), ["2026/11/04 10:00", "2026/10/20 09:00", "2026/11/02 12:00"]);
+  assert.deepEqual(state.data.slice(1).map(row => row[0]), ["2026/11/04", "2026/10/20", "2026/11/02"]);
   const ids = state.data.slice(1).map(row => row[state.data[0].indexOf("記事ID")]);
   assert.equal(new Set(ids).size, 3);
   assert(ids.every(id => /^news-[a-f0-9-]{36}$/.test(id)));
@@ -279,12 +282,32 @@ test("keyless publishing sends only published fields, never private columns or f
   const payload = JSON.parse(request.options.payload);
   assert.equal(payload.records.length, 1);
   assert.equal(payload.records[0].id, "news-public");
-  assert.equal(payload.records[0].publishedAt, "2026-10-20T09:00:00+09:00");
+  assert.equal(payload.records[0].publishedAt, "2026-10-20T00:00:00+09:00");
   for (const value of ["private@example.com", "内部メモ", "未解禁", "news-draft", "news-future"]) assert(!request.options.payload.includes(value));
   assert.equal(state.data[1][state.data[0].indexOf("反映結果")], "公開済み");
   assert.equal(state.data[2][state.data[0].indexOf("反映結果")], "下書き");
   assert.equal(state.data[3][state.data[0].indexOf("反映結果")], "公開待ち");
   assert.equal(state.held, false);
+});
+
+test("Form Date cells and legacy timestamps publish as JST dates without changing event times", () => {
+  const { state, script } = publisher();
+  state.data[1][2] = new Date("2026-11-03T15:30:00Z");
+  state.data[1][6] = new Date("2026-11-04T12:15:00Z");
+  script.prepareNewsSheet();
+  script.publishNews();
+  const payload = JSON.parse(state.fetches.find(entry => entry.url.endsWith("/internal/publish")).options.payload);
+  assert.equal(payload.records[0].publishedAt, "2026-11-04T00:00:00+09:00");
+  assert.equal(payload.records[0].startsAt, "2026-11-04T21:15:00+09:00");
+  assert.equal(script.newsDate_("2026/11/04 23:59", 2, true), "2026-11-04T00:00:00+09:00");
+});
+
+test("date-only publication waits for the selected JST day, not an old clock time", () => {
+  const { state, script } = publisher();
+  state.data[1][2] = "2026/11/05";
+  script.prepareNewsSheet();
+  assert.equal(script.newsPublisherRows_(state.data, state.properties, Date.parse("2026-11-04T23:59:59+09:00")).records.length, 0);
+  assert.equal(script.newsPublisherRows_(state.data, state.properties, Date.parse("2026-11-05T00:00:00+09:00")).records.length, 1);
 });
 
 test("keyless trigger setup schedules the publisher, not legacy credential polling", () => {

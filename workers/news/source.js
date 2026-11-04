@@ -70,7 +70,7 @@ globalThis.RKSheetSource = (() => {
       publicOrigin: origin(env.PUBLIC_ORIGIN), siteOrigin: origin(env.SITE_ORIGIN)
     };
   }
-  function date(value, row) {
+  function date(value, row, publication = false) {
     let input = value;
     if (typeof value === "number" && Number.isFinite(value)) {
       const local = new Date(Date.UTC(1899, 11, 30) + Math.round(value * 86400) * 1000);
@@ -83,8 +83,10 @@ globalThis.RKSheetSource = (() => {
         input = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}T${h.padStart(2, "0")}:${min}:${s}+09:00`;
       } else input = value.trim();
     } else fail("DATE_INVALID", row);
-    try { globalThis.RKNews.formatDate(input); } catch { fail("DATE_INVALID", row); }
-    return input;
+    try {
+      globalThis.RKNews.formatDate(input);
+      return publication ? globalThis.RKNews.publicationDate(input) : input;
+    } catch { fail("DATE_INVALID", row); }
   }
   function text(value, maxLength, row, optional = false) {
     if ((value === undefined || value === null || value === "") && optional) return "";
@@ -129,7 +131,7 @@ globalThis.RKSheetSource = (() => {
       ids.add(id);
       rows.push({ id, state: status === "公開" ? "公開待ち" : status });
       if (status !== "公開") continue;
-      const publishedAt = date(get("publishedAt"), row);
+      const publishedAt = date(get("publishedAt"), row, true);
       if (Date.parse(publishedAt) > now) continue;
       const title = text(get("title"), 200, row);
       const category = categoryCodes[get("category")];

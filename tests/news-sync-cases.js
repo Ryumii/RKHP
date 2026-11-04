@@ -105,7 +105,7 @@ globalThis.RKNewsChecks = (() => {
     const result = parseRows([headers, original], config, now);
     equal(result.records[0].item.title, "記事のタイトル");
     expect(!JSON.stringify(result.records).includes("private@example.com"));
-    equal(result.records[0].item.publishedAt, "2026-11-04T10:00:00+09:00");
+    equal(result.records[0].item.publishedAt, "2026-11-04T00:00:00+09:00");
   });
   test("custom Form question names are mapped without rewriting content code", () => {
     const env = environment();
@@ -144,6 +144,18 @@ globalThis.RKNewsChecks = (() => {
     const items = parseRows(values, readConfig(environment()), now).records.map(record => record.item);
     equal(globalThis.RKNews.selectNews(items).map(item => item.id), ["news-a", "news-b", "news-m", "news-z"]);
     equal(items[0].id, "news-z");
+  });
+  test("publication uses the JST calendar day while event clock times remain unchanged", () => {
+    const late = row("news-late", "2026/11/04 23:59");
+    late[6] = "2026/11/04 21:15";
+    const result = parseRows([titles, late, row("news-utc", "2026-11-03T15:30:00Z")], readConfig(environment()), now);
+    equal(result.records.map(record => record.item.publishedAt), ["2026-11-04T00:00:00+09:00", "2026-11-04T00:00:00+09:00"]);
+    equal(result.records[0].item.startsAt, "2026-11-04T21:15:00+09:00");
+  });
+  test("a future publication day stays private until midnight in Japan", () => {
+    const values = [titles, row("news-next-day", "2026/11/05")];
+    equal(parseRows(values, readConfig(environment()), Date.parse("2026-11-04T23:59:59+09:00")).records.length, 0);
+    equal(parseRows(values, readConfig(environment()), Date.parse("2026-11-05T00:00:00+09:00")).records.length, 1);
   });
   test("drafts, ended articles and future publications never enter public records", () => {
     const pending = row("news-future", "2027/01/01");
@@ -232,7 +244,7 @@ globalThis.RKNewsChecks = (() => {
   test("bad publication data leaves the previous published snapshot intact", async () => {
     const state = await fixture(); await state.sync(); state.values[1][2] = "2026/02/30";
     await rejectsCode(() => state.sync(), "DATE_INVALID");
-    equal((await (await state.api()).json()).items[0].publishedAt, "2026-11-04T10:00:00+09:00");
+    equal((await (await state.api()).json()).items[0].publishedAt, "2026-11-04T00:00:00+09:00");
   });
   test("wrong sheet timezone prevents publication", async () => {
     const state = await fixture(); state.timeZone = "America/Los_Angeles";
@@ -342,9 +354,11 @@ globalThis.RKNewsChecks = (() => {
     const snapshot = await (await bucket.get(key)).json();
     snapshot.privateSource = source.spreadsheetId;
     snapshot.items[0].editorEmail = "private-editor@example.com";
+    snapshot.items[0].publishedAt = "2026-11-04T23:59:00+09:00";
     await bucket.put(key, JSON.stringify(snapshot));
     const response = await state.api(), result = await response.text();
     expect(!result.includes(source.spreadsheetId) && !result.includes("private-editor"));
+    equal(JSON.parse(result).items[0].publishedAt, "2026-11-04T00:00:00+09:00");
     expect(response.headers.get("cache-control").includes("max-age=60"));
     equal(response.headers.get("access-control-allow-origin"), state.env.SITE_ORIGIN);
   });

@@ -16,6 +16,14 @@ globalThis.RKNews = (() => {
       hour <= 23 && minute <= 59 && second <= 59 && Number.isFinite(Date.parse(value));
   }
 
+  function publicationDate(value) {
+    if (!isDate(value)) throw new TypeError("掲載日が不正です。");
+    const day = new Date(Date.parse(value) + 9 * 3600000).toISOString().split("T")[0];
+    const result = `${day}T00:00:00+09:00`;
+    if (!isDate(result)) throw new TypeError("掲載日が不正です。");
+    return result;
+  }
+
   function validateHttpsUrl(value) {
     if (typeof value !== "string") throw new TypeError("URLは文字列で指定してください。");
     const url = new URL(value);
@@ -59,6 +67,7 @@ globalThis.RKNews = (() => {
     validateNews(items);
     if (!Object.hasOwn(categories, category)) throw new TypeError("絞り込みカテゴリが不正です。");
     return items.filter((item) => category === "all" || item.category === category)
+      .map((item) => ({ ...item, publishedAt: publicationDate(item.publishedAt) }))
       .toSorted((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt) || a.id.localeCompare(b.id));
   }
 
@@ -121,5 +130,5 @@ globalThis.RKNews = (() => {
     }
   }
 
-  return Object.freeze({ categories, regularCategories, validateNews, selectNews, validateRegularMedia, selectRegularMedia, formatDate, loadNews });
+  return Object.freeze({ categories, regularCategories, validateNews, selectNews, validateRegularMedia, selectRegularMedia, publicationDate, formatDate, loadNews });
 })();

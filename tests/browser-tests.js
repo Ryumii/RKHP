@@ -1,7 +1,7 @@
 "use strict";
 
 (() => {
-  const { validateNews, selectNews, validateRegularMedia, selectRegularMedia, formatDate } = window.RKNews;
+  const { validateNews, selectNews, validateRegularMedia, selectRegularMedia, publicationDate, formatDate } = window.RKNews;
   const { validateConfig, buildPayload, isSuccess } = window.RKContact;
   const data = window.RK_CONTENT.news;
   const regular = window.RK_CONTENT.regularMedia;
@@ -47,6 +47,22 @@
     assert(ids === data.map((item) => item.id).join(","));
   });
   test("時差を考慮して日本時間の日付を表示する", () => assert(formatDate("2026-10-28T15:00:00Z") === "2026/10/29"));
+  test("掲載日は日本時間の日付に統一して時刻を除く", () => {
+    assert(publicationDate("2026-11-03T15:30:00Z") === "2026-11-04T00:00:00+09:00");
+    assert(publicationDate("2026-11-04T23:59:00+09:00") === "2026-11-04T00:00:00+09:00");
+    throws(() => publicationDate("2026-02-30T00:00:00+09:00"));
+  });
+  test("同じ掲載日は旧データの時刻ではなく固定ID順にする", () => {
+    const items = [
+      { ...data[0], id: "day-b", publishedAt: "2026-11-04T23:59:00+09:00" },
+      { ...data[0], id: "day-a", publishedAt: "2026-11-03T15:00:00Z" }
+    ];
+    const selected = selectNews(items);
+    assert(selected.map(item => item.id).join(",") === "day-a,day-b");
+    assert(selected.every(item => item.publishedAt === "2026-11-04T00:00:00+09:00"));
+    assert(items[0].id === "day-b");
+    assert(items[0].publishedAt === "2026-11-04T23:59:00+09:00");
+  });
   test("タイムゾーンなしの日付を拒否する", () => throws(() => formatDate("2026-10-28")));
   test("実在しない2月30日を拒否する", () => throws(() => validateNews(modified((rows) => { rows[0].publishedAt = "2026-02-30T09:00:00+09:00"; }))));
   test("閏年の2月29日は受け付ける", () => {
