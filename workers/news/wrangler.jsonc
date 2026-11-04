@@ -12,11 +12,11 @@
       "name": "rkhp-news-test",
       "vars": {
         "NEWS_ENV": "test",
-        "PUBLIC_ORIGIN": "https://replace-news-test.example.com",
-        "SITE_ORIGIN": "https://replace-site-test.example.com"
+        "PUBLIC_ORIGIN": "https://rkhp-news-test.rkhp-preview-d0f68d.workers.dev",
+        "SITE_ORIGIN": "https://ryumii.github.io"
       },
       "r2_buckets": [{ "binding": "NEWS_BUCKET", "bucket_name": "rkhp-news-test" }],
-      "triggers": { "crons": ["*/5 * * * *"] }
+      "triggers": { "crons": [] }
     },
     "production": {
       "name": "rkhp-news-production",
@@ -26,7 +26,7 @@
         "SITE_ORIGIN": "https://replace-site.example.com"
       },
       "r2_buckets": [{ "binding": "NEWS_BUCKET", "bucket_name": "rkhp-news-production" }],
-      "triggers": { "crons": ["*/5 * * * *"] }
+      "triggers": { "crons": [] }
     }
   }
 }

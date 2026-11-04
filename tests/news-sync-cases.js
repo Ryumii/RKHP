@@ -32,7 +32,7 @@ globalThis.RKNewsChecks = (() => {
     constructor() { this.objects = new Map(); this.sequence = 0; }
     async head(key) {
       const entry = this.objects.get(key);
-      return entry ? { etag: entry.etag } : null;
+      return entry ? { etag: entry.etag, httpMetadata: entry.httpMetadata, customMetadata: entry.customMetadata } : null;
     }
     async get(key) {
       const entry = this.objects.get(key);
@@ -48,7 +48,7 @@ globalThis.RKNewsChecks = (() => {
       if (condition?.etagDoesNotMatch === "*" && previous) return null;
       if (condition?.etagMatches && previous?.etag !== condition.etagMatches) return null;
       const bytes = typeof value === "string" ? new TextEncoder().encode(value) : new Uint8Array(value).slice();
-      const entry = { bytes, etag: `version-${++this.sequence}` };
+      const entry = { bytes, etag: `version-${++this.sequence}`, httpMetadata: options.httpMetadata, customMetadata: options.customMetadata };
       this.objects.set(key, entry);
       return { etag: entry.etag };
     }
@@ -439,6 +439,81 @@ globalThis.RKNewsChecks = (() => {
       equal(await olderResult, null);
       equal((await state.api(latestPath)).status, 200);
     } finally { release(); await olderResult; }
+  });
+  function pushFixture() {
+    const env = {
+      ...environment(), NEWS_SOURCE: JSON.stringify({ mode: "push", namespace: "test-push-source-0001" }),
+      NEWS_PUBLISH_TOKEN: "test-publisher-token-00000000000000000000000", NEWS_BUCKET: new Bucket()
+    };
+    delete env.GOOGLE_SERVICE_ACCOUNT;
+    const request = (path, body, options = {}) => worker.fetch(new Request(env.PUBLIC_ORIGIN + path, {
+      method: options.method || "POST",
+      headers: { Authorization: `Bearer ${env.NEWS_PUBLISH_TOKEN}`, "Content-Type": "application/json", ...options.headers },
+      ...(body === undefined ? {} : { body: typeof body === "string" || body instanceof Uint8Array ? body : JSON.stringify(body) })
+    }), env);
+    const api = () => worker.fetch(new Request(env.PUBLIC_ORIGIN + "/api/news"), env);
+    const payload = records => ({ version: 1, source: "test-push-source-0001", batch: "batch-test-00000000000001", records });
+    const record = (id = "news-push", publishedAt = "2026/11/04 10:00") => ({
+      id, status: "公開", publishedAt, title: "公開記事", category: "メディア", body: "本文", startsAt: "", url: ""
+    });
+    return { env, request, api, payload, record };
+  }
+  test("keyless configuration never requires or accepts Google source identifiers", async () => {
+    const state = pushFixture();
+    equal(readConfig(state.env).mode, "push");
+    state.env.NEWS_SOURCE = JSON.stringify({ mode: "push", namespace: "test-push-source-0001", spreadsheetId: source.spreadsheetId });
+    await rejectsCode(() => readConfig(state.env), "CONFIG_PUBLISHER");
+  });
+  test("keyless publication is authenticated, sorted and independent of Google credentials", async () => {
+    const state = pushFixture();
+    const response = await state.request("/internal/publish", state.payload([
+      state.record("old", "2026/10/20"), state.record("new"), state.record("middle", "2026/11/02")
+    ]));
+    equal(response.status, 200);
+    const result = await (await state.api()).json();
+    equal(result.items.map(item => item.id), ["new", "middle", "old"]);
+    expect(!JSON.stringify(result).includes("test-push-source"));
+    equal((await state.request("/internal/publish", state.payload([]), { headers: { Authorization: "Bearer invalid" } })).status, 404);
+  });
+  test("keyless publication rejects raw columns, private links and draft records", async () => {
+    const state = pushFixture();
+    for (const change of [{ editorEmail: "private@example.com" }, { status: "下書き" }, { url: "https://docs.google.com/spreadsheets/d/private-source" }]) {
+      equal((await state.request("/internal/publish", state.payload([{ ...state.record(), ...change }]))).status, 400);
+    }
+    equal((await state.api()).status, 503);
+  });
+  test("keyless images are private until an authorized publication references their batch", async () => {
+    const state = pushFixture(), batch = "batch-test-00000000000001";
+    const upload = await state.request("/internal/images", new Uint8Array([255, 216, 255, 224, 0, 1, 2, 3]), {
+      headers: { "Content-Type": "image/jpeg", "X-News-Batch": batch }
+    });
+    equal(upload.status, 200);
+    const { key } = await upload.json();
+    equal((await worker.fetch(new Request(state.env.PUBLIC_ORIGIN + "/news-media/" + key), state.env)).status, 503);
+    const publication = await state.request("/internal/publish", state.payload([{ ...state.record(), imageKey: key, imageAlt: "番組画像" }]));
+    equal(publication.status, 200);
+    const result = await (await state.api()).json();
+    equal(result.items[0].image, state.env.PUBLIC_ORIGIN + "/news-media/" + key);
+    equal((await state.request("/internal/images/" + key, undefined, { method: "HEAD", headers: { "X-News-Batch": "batch-other-0000000000001" } })).status, 200);
+    equal((await state.request("/internal/publish", state.payload([]))).status, 200);
+    equal((await worker.fetch(new Request(state.env.PUBLIC_ORIGIN + "/news-media/" + key), state.env)).status, 404);
+  });
+  test("keyless image keys cannot be borrowed from an unrelated uncommitted batch", async () => {
+    const state = pushFixture();
+    const upload = await state.request("/internal/images", new Uint8Array([255, 216, 255, 224]), {
+      headers: { "Content-Type": "image/jpeg", "X-News-Batch": "batch-uncommitted-0000001" }
+    });
+    const { key } = await upload.json();
+    equal((await state.request("/internal/publish", state.payload([{ ...state.record(), imageKey: key, imageAlt: "画像" }]))).status, 400);
+    equal((await state.api()).status, 503);
+  });
+  test("publisher token rotation isolates previous snapshots and sender failure stays explicit", async () => {
+    const state = pushFixture();
+    await state.request("/internal/publish", state.payload([state.record()]));
+    equal((await state.request("/internal/report", { source: "test-push-source-0001", code: "SOURCE_READ_FAILED", row: 2 })).status, 200);
+    equal((await (await state.api()).json()).stale, true);
+    state.env.NEWS_PUBLISH_TOKEN = "different-publisher-token-000000000000000000";
+    equal((await state.api()).status, 503);
   });
   return checks;
 })();

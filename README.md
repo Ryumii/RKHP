@@ -6,7 +6,7 @@
 
 - デモ：[GitHub Pages](https://ryumii.github.io/RKHP/)
 - ソース：[Ryumii/RKHP](https://github.com/Ryumii/RKHP)
-- 本番：Cloudflareを予定。プロジェクトと独自ドメインは未設定です。
+- 本番：Cloudflareで公開予定。独自ドメインは指定済みですが、サイト本体の配信設定は未実施です。
 
 現在のGitHubプランではPrivateリポジトリからPagesを公開できないため、デモ共有期間はPublicにします。`RKHP`という名前や`noindex`はアクセス制限ではありません。公開中にコピーされたソース・画像・資料は回収できません。
 
@@ -25,9 +25,9 @@ node ".\scripts\build-site.mjs"
 
 ## ニュース管理
 
-非公開のGoogle Sheets・Forms・Driveを、Cloudflare WorkersとR2へ連携するコードを追加しました。テストと本番で、シート・画像フォルダー・連携アカウント・列名の対応を切り替えられます。HPの表示は掲載日時の新しい順です。
+非公開のGoogle Sheets・Forms・Driveを、所有者が認可したApps ScriptからCloudflare WorkersとR2へ連携します。Googleの秘密鍵は使わず、公開対象だけを送信します。テストと本番で、シート・画像フォルダー・所有者・列名の対応を切り替えられます。HPの表示は掲載日時の新しい順です。
 
-設定手順は[ニュース管理](./docs/news-management.md)、入力列は[テスト用CSV](./docs/news-sheet-template.csv)を参照してください。実シートとCloudflareへの接続はまだ行っておらず、既存デモは明示的なサンプルモードのままです。
+設定手順は[ニュース管理](./docs/news-management.md)、入力列は[テスト用CSV](./docs/news-sheet-template.csv)を参照してください。テスト用Workerと非公開R2は準備済みです。シート所有者によるApps Scriptの導入・認可・初回送信は未実施で、既存デモは明示的なサンプルモードのままです。
 
 `workers` は静的サイトの公開用フォルダーへ含めません。ニュースWorkerは、制作資料や秘密設定を含めずに別途デプロイします。
 

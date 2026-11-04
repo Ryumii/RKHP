@@ -34,15 +34,28 @@ globalThis.RKSheetSource = (() => {
     let config, account;
     try {
       config = JSON.parse(env.NEWS_SOURCE);
-      account = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT);
     } catch { fail("CONFIG_JSON"); }
+    if (!config || typeof config !== "object" || Array.isArray(config) ||
+        !["test", "production"].includes(env.NEWS_ENV)) fail("CONFIG_SOURCE");
+    if (config.mode === "push") {
+      if (Object.keys(config).some(key => !["mode", "namespace"].includes(key)) ||
+          typeof config.namespace !== "string" || !/^[a-z0-9-]{10,100}$/.test(config.namespace) ||
+          typeof env.NEWS_PUBLISH_TOKEN !== "string" || !/^[A-Za-z0-9_-]{32,200}$/.test(env.NEWS_PUBLISH_TOKEN)) fail("CONFIG_PUBLISHER");
+      return {
+        mode: "push", namespace: config.namespace, publishToken: env.NEWS_PUBLISH_TOKEN,
+        environment: env.NEWS_ENV, publicOrigin: origin(env.PUBLIC_ORIGIN), siteOrigin: origin(env.SITE_ORIGIN),
+        columns: { ...headers }, overrides: [], account: null, spreadsheetId: "", driveFolderId: ""
+      };
+    }
+    if (config.mode !== undefined && config.mode !== "pull") fail("CONFIG_SOURCE");
+    try { account = JSON.parse(env.GOOGLE_SERVICE_ACCOUNT); } catch { fail("CONFIG_JSON"); }
     if (!config || !account || typeof config !== "object" || Array.isArray(config) ||
         !["test", "production"].includes(env.NEWS_ENV) ||
         !identifier(config.spreadsheetId) ||
         (config.driveFolderId !== undefined && config.driveFolderId !== "" && !identifier(config.driveFolderId)) ||
         typeof config.worksheet !== "string" || !config.worksheet.trim() ||
         config.worksheet.length > 100 || /[\r\n]/.test(config.worksheet)) fail("CONFIG_SOURCE");
-    if (Object.keys(config).some(key => !["spreadsheetId", "driveFolderId", "worksheet", "columns"].includes(key))) fail("CONFIG_SOURCE");
+    if (Object.keys(config).some(key => !["mode", "spreadsheetId", "driveFolderId", "worksheet", "columns"].includes(key))) fail("CONFIG_SOURCE");
     if (typeof account.client_email !== "string" || !/^[^@\s]+@[^@\s]+\.gserviceaccount\.com$/.test(account.client_email) ||
         typeof account.private_key !== "string" || !account.private_key.startsWith("-----BEGIN PRIVATE KEY-----")) fail("CONFIG_ACCOUNT");
     if (config.columns !== undefined && (!config.columns || typeof config.columns !== "object" || Array.isArray(config.columns))) fail("CONFIG_COLUMNS");
@@ -53,7 +66,7 @@ globalThis.RKSheetSource = (() => {
     }
     if (new Set(Object.values(columns)).size !== Object.keys(columns).length) fail("CONFIG_COLUMNS");
     return {
-      ...config, driveFolderId: config.driveFolderId || "", columns, overrides: Object.keys(config.columns || {}), account, environment: env.NEWS_ENV,
+      ...config, mode: "pull", driveFolderId: config.driveFolderId || "", columns, overrides: Object.keys(config.columns || {}), account, environment: env.NEWS_ENV,
       publicOrigin: origin(env.PUBLIC_ORIGIN), siteOrigin: origin(env.SITE_ORIGIN)
     };
   }
@@ -138,12 +151,41 @@ globalThis.RKSheetSource = (() => {
       const image = driveImage(get("image"), row);
       if (image) item.imageAlt = text(get("imageAlt"), 300, row);
       const publicText = JSON.stringify(item);
-      if ([config.spreadsheetId, config.driveFolderId, config.account.client_email, image?.id].filter(Boolean).some(value => publicText.includes(value)) ||
+      if ([config.spreadsheetId, config.driveFolderId, config.account?.client_email, image?.id].filter(Boolean).some(value => publicText.includes(value)) ||
           /docs\.google\.com\/spreadsheets|drive\.google\.com/i.test(publicText)) fail("PRIVATE_REFERENCE", row);
       records.push({ item, image, row });
       rows[rows.length - 1].state = "公開済み";
     }
     return { records, rows };
   }
-  return Object.freeze({ headers, SourceError, fail, readConfig, date, driveImage, parseRows });
+  function parsePublication(payload, config, now) {
+    if (!payload || payload.version !== 1 || payload.source !== config.namespace ||
+        !Array.isArray(payload.records) || payload.records.length > 1000 ||
+        Object.keys(payload).some(key => !["version", "source", "records", "batch"].includes(key)) ||
+        typeof payload.batch !== "string" || !/^[a-z0-9-]{20,100}$/.test(payload.batch)) fail("PUBLISH_PAYLOAD");
+    const allowed = ["id", "status", "publishedAt", "title", "category", "body", "startsAt", "url", "imageAlt", "imageKey", "sourceRow"];
+    const values = [Object.values(headers)];
+    for (let index = 0; index < payload.records.length; index++) {
+      const record = payload.records[index], row = index + 2;
+      if (!record || typeof record !== "object" || Array.isArray(record) ||
+          Object.keys(record).some(key => !allowed.includes(key)) || record.status !== "公開" ||
+          (record.sourceRow !== undefined && (!Number.isInteger(record.sourceRow) || record.sourceRow < 2 || record.sourceRow > 1000000))) fail("PUBLISH_RECORD", row);
+      if (record.imageKey !== undefined && !/^[a-f0-9]{64}\.(?:jpg|png|webp)$/.test(record.imageKey)) fail("IMAGE_KEY", row);
+      if (record.imageKey) text(record.imageAlt, 300, row);
+      values.push(Object.keys(headers).map(field => field === "image" || field === "imageAlt" ? "" :
+        field === "body" ? record.body : record[field] ?? ""));
+    }
+    const parsed = parseRows(values, config, now);
+    const originals = new Map(payload.records.map(record => [record.id, record]));
+    for (const record of parsed.records) {
+      const original = originals.get(record.item.id);
+      if (original.imageKey) {
+        record.imageKey = original.imageKey;
+        record.item.imageAlt = original.imageAlt;
+        if (/docs\.google\.com\/spreadsheets|drive\.google\.com/i.test(original.imageAlt)) fail("PRIVATE_REFERENCE", record.row);
+      }
+    }
+    return parsed;
+  }
+  return Object.freeze({ headers, SourceError, fail, readConfig, date, driveImage, parseRows, parsePublication });
 })();

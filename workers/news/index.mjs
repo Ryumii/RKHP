@@ -7,6 +7,8 @@ export default {
     return globalThis.RKNewsWorker.fetch(request, env);
   },
   scheduled(event, env, context) {
-    context.waitUntil(globalThis.RKNewsWorker.sync(env));
+    if (globalThis.RKSheetSource.readConfig(env).mode === "pull") {
+      context.waitUntil(globalThis.RKNewsWorker.sync(env));
+    }
   }
 };

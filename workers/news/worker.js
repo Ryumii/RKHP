@@ -1,7 +1,7 @@
 "use strict";
 
 globalThis.RKNewsWorker = (() => {
-  const { SourceError, fail, readConfig, parseRows } = globalThis.RKSheetSource;
+  const { SourceError, fail, readConfig, parseRows, parsePublication } = globalThis.RKSheetSource;
   const encoder = new TextEncoder();
   const jsonLimit = 2 * 1024 * 1024;
   const imageLimit = 10 * 1024 * 1024;
@@ -22,10 +22,13 @@ globalThis.RKNewsWorker = (() => {
       .map(byte => byte.toString(16).padStart(2, "0")).join("");
   }
   async function scope(config) {
-    const fingerprint = await digest(JSON.stringify([
+    const identity = config.mode === "push"
+      ? ["push", config.environment, config.namespace, config.publishToken, config.publicOrigin]
+      : [
       config.environment, config.spreadsheetId, config.worksheet, config.driveFolderId,
       config.account.client_email, config.columns, config.publicOrigin
-    ]));
+    ];
+    const fingerprint = await digest(JSON.stringify(identity));
     return `private/${fingerprint}`;
   }
   function base64(bytes) {
@@ -193,11 +196,36 @@ globalThis.RKNewsWorker = (() => {
     }
     fail("STATUS_CONFLICT");
   }
+  async function releaseLease(bucket, active) {
+    if (!active) return;
+    try {
+      await bucket.put(active.key, JSON.stringify({ owner: active.owner, expiresAt: 0 }), { onlyIf: { etagMatches: active.etag } });
+    } catch { log(new SourceError("LEASE_STORAGE")); }
+  }
+  async function commitSnapshot(bucket, prefix, active, previousVersion, previous, items, media, rows, clock) {
+    const publicItems = globalThis.RKNews.selectNews(items);
+    const currentLease = await saved(bucket, active.key);
+    if (currentLease?.owner !== active.owner || clock() >= active.expiresAt - 1000) fail("SYNC_LEASE");
+    const updatedAt = new Date(clock()).toISOString();
+    const snapshot = { version: 1, updatedAt, items: publicItems, media };
+    const written = await bucket.put(`${prefix}/snapshot.json`, JSON.stringify(snapshot), {
+      httpMetadata: { contentType: "application/json" },
+      onlyIf: previousVersion ? { etagMatches: previousVersion.etag } : { etagDoesNotMatch: "*" }
+    });
+    if (!written) fail("SYNC_CONFLICT");
+    const currentKeys = new Set(media.map(image => image.key));
+    for (const key of new Set((previous?.media || []).map(image => image.key))) {
+      if (!currentKeys.has(key)) await bucket.delete(`${prefix}/images/${key}`);
+    }
+    await writeStatus(bucket, prefix, active, { updatedAt, rows, error: null });
+    return { updatedAt, count: publicItems.length };
+  }
   async function sync(env, request = globalThis.fetch, clock = Date.now) {
     let config, prefix, active, previous, previousVersion;
     const bucket = env.NEWS_BUCKET;
     try {
       config = readConfig(env);
+      if (config.mode !== "pull") fail("SOURCE_PUSH_MANAGED");
       prefix = await scope(config);
       active = await lease(bucket, prefix, clock);
       previousVersion = await bucket.get(`${prefix}/snapshot.json`);
@@ -219,22 +247,7 @@ globalThis.RKNewsWorker = (() => {
         }
         items.push(item);
       }
-      const publicItems = globalThis.RKNews.selectNews(items);
-      const currentLease = await saved(bucket, active.key);
-      if (currentLease?.owner !== active.owner || clock() >= active.expiresAt - 1000) fail("SYNC_LEASE");
-      const updatedAt = new Date(clock()).toISOString();
-      const snapshot = { version: 1, updatedAt, items: publicItems, media };
-      const written = await bucket.put(`${prefix}/snapshot.json`, JSON.stringify(snapshot), {
-        httpMetadata: { contentType: "application/json" },
-        onlyIf: previousVersion ? { etagMatches: previousVersion.etag } : { etagDoesNotMatch: "*" }
-      });
-      if (!written) fail("SYNC_CONFLICT");
-      const currentKeys = new Set(media.map(image => image.key));
-      for (const key of new Set((previous?.media || []).map(image => image.key))) {
-        if (!currentKeys.has(key)) await bucket.delete(`${prefix}/images/${key}`);
-      }
-      await writeStatus(bucket, prefix, active, { updatedAt, rows: parsed.rows, error: null });
-      return { updatedAt, count: publicItems.length };
+      return await commitSnapshot(bucket, prefix, active, previousVersion, previous, items, media, parsed.rows, clock);
     } catch (error) {
       const failure = safeError(error);
       log(error);
@@ -246,12 +259,74 @@ globalThis.RKNewsWorker = (() => {
       // shortcut: 失敗時の未参照画像は非公開で保持, 容量増加時に参照確認付きの回収処理を追加する。
       throw new SourceError(failure.code, failure.row);
     } finally {
-      if (active) {
-        try {
-          await bucket.put(active.key, JSON.stringify({ owner: active.owner, expiresAt: 0 }), { onlyIf: { etagMatches: active.etag } });
-        } catch { log(new SourceError("LEASE_STORAGE")); }
-      }
+      await releaseLease(bucket, active);
     }
+  }
+  async function authorized(request, token) {
+    return typeof token === "string" && token.length >= 32 &&
+      await digest(request.headers.get("authorization") || "") === await digest(`Bearer ${token}`);
+  }
+  async function pushRequest(request, env, config, url) {
+    if (config.mode !== "push" || !await authorized(request, config.publishToken)) return response({ error: "Not found" }, 404);
+    const prefix = await scope(config), bucket = env.NEWS_BUCKET;
+    const batch = request.headers.get("x-news-batch") || "";
+    if (url.pathname === "/internal/images" && request.method === "POST") {
+      if (!/^[a-z0-9-]{20,100}$/.test(batch)) fail("IMAGE_BATCH");
+      const mime = request.headers.get("content-type");
+      const bytes = await readBytes(request, imageLimit), extension = imageType(bytes, mime);
+      const key = `${await digest(`${await digest(bytes)}:${crypto.randomUUID()}`)}.${extension}`;
+      await bucket.put(`${prefix}/images/${key}`, bytes, { httpMetadata: { contentType: mime }, customMetadata: { batch } });
+      return response({ key }, 200);
+    }
+    const check = url.pathname.match(/^\/internal\/images\/([a-f0-9]{64}\.(?:jpg|png|webp))$/);
+    if (check && request.method === "HEAD") {
+      const object = await bucket.head(`${prefix}/images/${check[1]}`);
+      const snapshot = await saved(bucket, `${prefix}/snapshot.json`);
+      const valid = object && (object.customMetadata?.batch === batch || snapshot?.media.some(image => image.key === check[1]));
+      return new Response(null, { status: valid ? 200 : 404, headers: { "Cache-Control": "no-store" } });
+    }
+    if (url.pathname === "/internal/report" && request.method === "POST") {
+      const report = json(await readBytes(request, 4096));
+      if (!report || report.source !== config.namespace || !/^[A-Z_]{1,60}$/.test(report.code) ||
+          (report.row !== undefined && (!Number.isInteger(report.row) || report.row < 2 || report.row > 1000000)) ||
+          Object.keys(report).some(key => !["source", "code", "row"].includes(key))) fail("PUBLISH_REPORT");
+      const active = await lease(bucket, prefix, Date.now);
+      try {
+        await writeStatus(bucket, prefix, active, { updatedAt: new Date().toISOString(), rows: [], error: { code: report.code, ...(report.row ? { row: report.row } : {}) } });
+      } finally { await releaseLease(bucket, active); }
+      return response({ reported: true }, 200);
+    }
+    if (url.pathname !== "/internal/publish" || request.method !== "POST") return response({ error: "Not found" }, 404);
+    let active;
+    try {
+      const payload = json(await readBytes(request, jsonLimit));
+      const parsed = parsePublication(payload, config, Date.now());
+      active = await lease(bucket, prefix, Date.now);
+      const previousVersion = await bucket.get(`${prefix}/snapshot.json`);
+      const previous = previousVersion ? await previousVersion.json() : null;
+      const media = [], items = [];
+      for (const record of parsed.records) {
+        const item = { ...record.item };
+        if (record.imageKey) {
+          const object = await bucket.head(`${prefix}/images/${record.imageKey}`);
+          const prior = previous?.media.find(image => image.key === record.imageKey);
+          if (!object || (!prior && object.customMetadata?.batch !== payload.batch)) fail("IMAGE_MISSING", record.row);
+          const mime = object.httpMetadata?.contentType;
+          if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) fail("IMAGE_FORMAT", record.row);
+          media.push({ key: record.imageKey, mime });
+          item.image = `${config.publicOrigin}/news-media/${record.imageKey}`;
+        }
+        items.push(item);
+      }
+      return response(await commitSnapshot(bucket, prefix, active, previousVersion, previous, items, media, parsed.rows, Date.now), 200);
+    } catch (error) {
+      log(error);
+      if (active) {
+        try { await writeStatus(bucket, prefix, active, { updatedAt: new Date().toISOString(), rows: [], error: safeError(error) }); }
+        catch { log(new SourceError("STATUS_STORAGE")); }
+      }
+      return response({ error: safeError(error) }, 400);
+    } finally { await releaseLease(bucket, active); }
   }
   function response(body, status, config, cache = "no-store", type = "application/json; charset=utf-8") {
     return new Response(type.startsWith("application/json") ? JSON.stringify(body) : body, {
@@ -269,6 +344,7 @@ globalThis.RKNewsWorker = (() => {
       config = readConfig(env);
       const url = new URL(request.url);
       if (url.origin !== config.publicOrigin || url.search) return response({ error: "Not found" }, 404, config);
+      if (url.pathname.startsWith("/internal/") && url.pathname !== "/internal/status") return await pushRequest(request, env, config, url);
       if (url.pathname === "/internal/status") {
         const token = env.STATUS_TOKEN;
         const authorization = request.headers.get("authorization") || "";
