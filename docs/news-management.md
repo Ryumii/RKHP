@@ -56,6 +56,8 @@ Formsが作る画像保管フォルダーを連携対象とし、質問別の子
 
 制作担当者がCloudflareの受信口を準備した後、シート所有者が一度だけ導入・認可します。日常の更新にGoogle CloudやCloudflareの管理画面は不要です。
 
+Googleへのログインと以下の設定は、通常のEdgeまたはChromeで行ってください。VS Code内などの組み込みブラウザや自動操作環境では、Googleがログインを拒否する場合があります。「JavaScriptが無効・非対応」と表示された場合も、まず通常のブラウザでシートを開き直します。詳細は[Googleの対応ブラウザ案内](https://support.google.com/accounts/answer/7675428?hl=ja)を参照してください。Google Cloud CLIの認証だけでは、シートやApps Scriptの編集認可にはなりません。
+
 1. シートの一般的なアクセスを「制限付き」に保ち、管理するタブを開きます。既存のForm回答をテストデータで上書きしません。
 2. 「拡張機能」のApps Scriptを開き、[補助スクリプト](../scripts/google-news-sheet.gs)の全体を登録して保存します。
 3. Apps Scriptのプロジェクト設定でマニフェストの表示を有効にし、`appsscript.json` を[提供マニフェスト](../scripts/appsscript.json)の内容に置き換えて保存します。
