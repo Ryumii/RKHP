@@ -7,6 +7,17 @@ import test from "node:test";
 
 const source = readFileSync(fileURLToPath(new URL("../scripts/google-news-sheet.gs", import.meta.url)), "utf8");
 
+test("the manifest explicitly grants current-sheet, trigger and effective-user scopes", () => {
+  const manifest = JSON.parse(readFileSync(fileURLToPath(new URL("../scripts/appsscript.json", import.meta.url)), "utf8"));
+  for (const scope of [
+    "https://www.googleapis.com/auth/spreadsheets.currentonly",
+    "https://www.googleapis.com/auth/script.scriptapp",
+    "https://www.googleapis.com/auth/userinfo.email"
+  ]) assert(manifest.oauthScopes.includes(scope));
+  assert(!manifest.oauthScopes.includes("https://www.googleapis.com/auth/drive"));
+  assert(!manifest.oauthScopes.includes("https://www.googleapis.com/auth/spreadsheets"));
+});
+
 function fixture(data = []) {
   const state = {
     data: data.map(row => [...row]), protections: [], held: false, created: [], deleted: [], fetches: [],
@@ -193,6 +204,36 @@ test("trigger setup preserves unrelated automation and installs both edit and Fo
     { handler: "handleNewsEdit", type: "submit" },
     { handler: "updateNewsResults", minutes: 5 }
   ]);
+});
+
+test("ID automation backfills once without publisher secrets or starting publication", () => {
+  const data = [["タイムスタンプ", "タイトル", "記事ID"], ["2026/11/05", "既存の記事", "keep-existing"], ["2026/11/05", "追加の記事", ""]];
+  const { state, script } = fixture(data);
+  state.properties = {};
+  script.enableNewsIdAutomation();
+  assert.deepEqual(state.data[0].slice(0, 3), data[0]);
+  assert.deepEqual(state.data[1].slice(0, 3), data[1]);
+  assert.deepEqual(state.data[2].slice(0, 2), data[2].slice(0, 2));
+  assert.match(state.data[2][2], /^news-[a-f0-9-]{36}$/);
+  assert.equal(state.properties.NEWS_WORKSHEET, "回答");
+  assert.deepEqual(state.created, [
+    { handler: "handleNewsEdit", type: "edit" },
+    { handler: "handleNewsEdit", type: "submit" }
+  ]);
+  assert.equal(state.fetches.length, 0);
+  assert.equal(state.properties.NEWS_PUBLISH_TOKEN, undefined);
+  const assigned = state.data[2][2];
+  script.prepareNewsSheet();
+  assert.equal(state.data[2][2], assigned);
+});
+
+test("ID triggers ignore other worksheet edits and reject missing target configuration", () => {
+  const { state, script } = fixture([["タイトル"], ["記事"]]);
+  const unrelated = { getName: () => "別タブ", getDataRange() { assert.fail("Unrelated sheet must not be read"); } };
+  script.handleNewsEdit({ range: { getSheet: () => unrelated } });
+  assert.deepEqual(state.data, [["タイトル"], ["記事"]]);
+  delete state.properties.NEWS_WORKSHEET;
+  assert.throws(() => script.handleNewsEdit({ range: { getSheet: () => unrelated } }), /管理対象のタブ/);
 });
 
 function publisher() {

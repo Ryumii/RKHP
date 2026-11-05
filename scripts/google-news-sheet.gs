@@ -50,16 +50,31 @@ function prepareNewsSheet() {
   fillNewsIds_(sheet);
 }
 
+function enableNewsIdAutomation() {
+  const sheet = SpreadsheetApp.getActiveSheet();
+  prepareNewsSheet();
+  PropertiesService.getScriptProperties().setProperty("NEWS_WORKSHEET", sheet.getName());
+  installNewsIdTriggers_();
+}
+
+function installNewsIdTriggers_() {
+  const book = SpreadsheetApp.getActive();
+  for (const trigger of ScriptApp.getProjectTriggers()) {
+    if (trigger.getHandlerFunction() === "handleNewsEdit") ScriptApp.deleteTrigger(trigger);
+  }
+  ScriptApp.newTrigger("handleNewsEdit").forSpreadsheet(book).onEdit().create();
+  ScriptApp.newTrigger("handleNewsEdit").forSpreadsheet(book).onFormSubmit().create();
+}
+
 function installNewsTriggers() {
   const book = SpreadsheetApp.getActive();
   const mode = PropertiesService.getScriptProperties().getProperty("NEWS_MODE") || "pull";
   if (!["pull", "push"].includes(mode)) throw new Error("ニュースの連携方式を確認してください。");
-  const handlers = ["handleNewsEdit", "updateNewsResults", "publishNews"];
+  const handlers = ["updateNewsResults", "publishNews"];
   for (const trigger of ScriptApp.getProjectTriggers()) {
     if (handlers.includes(trigger.getHandlerFunction())) ScriptApp.deleteTrigger(trigger);
   }
-  ScriptApp.newTrigger("handleNewsEdit").forSpreadsheet(book).onEdit().create();
-  ScriptApp.newTrigger("handleNewsEdit").forSpreadsheet(book).onFormSubmit().create();
+  installNewsIdTriggers_();
   ScriptApp.newTrigger(mode === "push" ? "publishNews" : "updateNewsResults").timeBased().everyMinutes(5).create();
 }
 
@@ -297,7 +312,11 @@ function publishNews() {
 
 function handleNewsEdit(event) {
   if (!event || !event.range) throw new Error("編集またはフォーム送信トリガーから実行してください。");
-  fillNewsIds_(event.range.getSheet());
+  const worksheet = PropertiesService.getScriptProperties().getProperty("NEWS_WORKSHEET");
+  if (!worksheet) throw new Error("管理対象のタブを先に設定してください。");
+  const sheet = event.range.getSheet();
+  if (sheet.getName() !== worksheet) return;
+  fillNewsIds_(sheet);
 }
 
 function fillNewsIds_(sheet) {
